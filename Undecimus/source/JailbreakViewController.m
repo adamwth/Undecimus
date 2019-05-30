@@ -24,7 +24,6 @@ static JailbreakViewController *sharedController = nil;
 static NSMutableString *output = nil;
 static NSString *bundledResources = nil;
 extern int maxStage;
-static BOOL darkMode = NO;
 
 - (IBAction)tappedOnJailbreak:(id)sender
 {
@@ -72,8 +71,6 @@ static BOOL darkMode = NO;
     
     [self.settingsView setTransform:CGAffineTransformScale(CGAffineTransformIdentity, 0.7, 0.7)];
     [self.settingsView setAlpha:0];
-    [self.mainDevView setTransform:CGAffineTransformScale(CGAffineTransformIdentity, 0.7, 0.7)];
-    [self.mainDevView setAlpha:0];
     [self.creditsView setTransform:CGAffineTransformScale(CGAffineTransformIdentity, 0.7, 0.7)];
     [self.creditsView setAlpha:0];
 }
@@ -90,8 +87,9 @@ static BOOL darkMode = NO;
     }
     
     if (prefs->dark_mode) {
-        darkMode = YES;
         [self darkMode];
+    } else {
+        [self lightMode];
     }
     
     release_prefs(&prefs);
@@ -117,13 +115,16 @@ static BOOL darkMode = NO;
 }
 
 - (void)darkMode {
-    darkMode = YES;
-    
     [[NSNotificationCenter defaultCenter] postNotificationName:@"darkModeSettings" object:self];
     [[NSNotificationCenter defaultCenter] postNotificationName:@"darkModeCredits" object:self];
     
     [self.darkModeButton setImage:[UIImage imageNamed:@"DarkMode-Dark"] forState:UIControlStateNormal];
     [self.settingsButton setImage:[UIImage imageNamed:@"Settings-Dark"] forState:UIControlStateNormal];
+    [self.pwn20wndButton setTintColor:[UIColor orangeColor]];
+    [self.sbingnerButton setTintColor:[UIColor orangeColor]];
+    [self.iOSAppDevButton setTintColor:[UIColor orangeColor]];
+    [self.ubikButton setTintColor:[UIColor orangeColor]];
+    [self.goButton setBackgroundColor:[UIColor orangeColor]];
     [self.exploitProgressLabel setTextColor:[UIColor whiteColor]];
     [self.exploitMessageLabel setTextColor:[UIColor whiteColor]];
     [self.u0Label setTextColor:[UIColor whiteColor]];
@@ -133,11 +134,8 @@ static BOOL darkMode = NO;
     [self.UIByLabel setTextColor:[UIColor whiteColor]];
     [self.firstAndLabel setTextColor:[UIColor whiteColor]];
     [self.secondAndLabel setTextColor:[UIColor whiteColor]];
-    [self.thirdAndLabel setTextColor:[UIColor whiteColor]];
-    [self.fourthAndLabel setTextColor:[UIColor whiteColor]];
     [self.outputView setTextColor:[UIColor whiteColor]];
     [self.backgroundView setBackgroundColor:[UIColor colorWithRed:17.0f/255.0f green:20.0f/255.0f blue:24.0f/255.0f alpha:0.95f]];
-    [self.mainDevsButton setTitleColor:[UIColor whiteColor] forState:normal];
     [self.settingsNavBar setTintColor:[UIColor whiteColor]];
     [self.settingsNavBar setLargeTitleTextAttributes:@{NSForegroundColorAttributeName:[UIColor whiteColor]}];
     [self.creditsNavBar setTintColor:[UIColor whiteColor]];
@@ -147,13 +145,16 @@ static BOOL darkMode = NO;
 }
 
 - (void)lightMode {
-    darkMode = NO;
-    
     [[NSNotificationCenter defaultCenter] postNotificationName:@"lightModeSettings" object:self];
     [[NSNotificationCenter defaultCenter] postNotificationName:@"lightModeCredits" object:self];
     
     [self.darkModeButton setImage:[UIImage imageNamed:@"DarkMode-Light"] forState:UIControlStateNormal];
     [self.settingsButton setImage:[UIImage imageNamed:@"Settings-Light"] forState:UIControlStateNormal];
+    [self.pwn20wndButton setTintColor:[UIColor colorWithRed:0.000000 green:0.478431 blue:1.000000 alpha:1.000000]];
+    [self.sbingnerButton setTintColor:[UIColor colorWithRed:0.000000 green:0.478431 blue:1.000000 alpha:1.000000]];
+    [self.iOSAppDevButton setTintColor:[UIColor colorWithRed:0.000000 green:0.478431 blue:1.000000 alpha:1.000000]];
+    [self.ubikButton setTintColor:[UIColor colorWithRed:0.000000 green:0.478431 blue:1.000000 alpha:1.000000]];
+    [self.goButton setBackgroundColor:[UIColor colorWithRed:0.000000 green:0.478431 blue:1.000000 alpha:1.000000]];
     [self.exploitProgressLabel setTextColor:[UIColor blackColor]];
     [self.exploitMessageLabel setTextColor:[UIColor blackColor]];
     [self.u0Label setTextColor:[UIColor blackColor]];
@@ -162,8 +163,6 @@ static BOOL darkMode = NO;
     [self.UIByLabel setTextColor:[UIColor blackColor]];
     [self.firstAndLabel setTextColor:[UIColor blackColor]];
     [self.secondAndLabel setTextColor:[UIColor blackColor]];
-    [self.thirdAndLabel setTextColor:[UIColor blackColor]];
-    [self.fourthAndLabel setTextColor:[UIColor blackColor]];
     [self.uOVersionLabel setTextColor:[UIColor blackColor]];
     [self.outputView setTextColor:[UIColor blackColor]];
     [self.backgroundView setBackgroundColor:[UIColor.whiteColor colorWithAlphaComponent:0.84]];
@@ -175,19 +174,18 @@ static BOOL darkMode = NO;
     [self setNeedsStatusBarAppearanceUpdate];
 }
 
-- (IBAction)enableDarkMode:(id)sender {
-    
-    [UIView animateWithDuration:0.5 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:UIViewAnimationOptionCurveEaseInOut animations:^{
-        if (darkMode) {
-            [self lightMode];
-        } else {
-            [self darkMode];
-        }
-    } completion:nil];
-    
+- (IBAction)tappedOnDarkMode:(id)sender {
     prefs_t *prefs = copy_prefs();
-    prefs->dark_mode = (bool)darkMode;
+    prefs->dark_mode = !prefs->dark_mode;
     set_prefs(prefs);
+    void (^const block)(void) = ^(void) {
+        if (prefs->dark_mode) {
+            [self darkMode];
+        } else {
+            [self lightMode];
+        }
+    };
+    [UIView animateWithDuration:0.5 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:UIViewAnimationOptionCurveEaseInOut animations:block completion:nil];
     release_prefs(&prefs);
 }
 
@@ -197,11 +195,10 @@ static BOOL darkMode = NO;
 }
 
 - (UIStatusBarStyle)preferredStatusBarStyle {
-    if (darkMode) {
-        return UIStatusBarStyleLightContent;
-    } else {
-        return UIStatusBarStyleDefault;
-    }
+    prefs_t *prefs = copy_prefs();
+    UIStatusBarStyle statusBarStyle = prefs->dark_mode ? UIStatusBarStyleLightContent : UIStatusBarStyleDefault;
+    release_prefs(&prefs);
+    return statusBarStyle;
 }
 
 - (IBAction)openSettings:(id)sender {
@@ -228,24 +225,6 @@ static BOOL darkMode = NO;
         self.settingsView.alpha = 1;
         self.creditsView.transform = CGAffineTransformScale(CGAffineTransformIdentity, 0.7, 0.7);
         self.creditsView.alpha = 0;
-    } completion:nil];
-}
-
-- (IBAction)openMainDevView:(id)sender {
-    [UIView animateWithDuration:0.5 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:UIViewAnimationOptionCurveEaseInOut animations:^{
-        self.mainDevView.transform = CGAffineTransformScale(CGAffineTransformIdentity, 1, 1);
-        self.mainDevView.alpha = 1;
-        self.mainView.transform = CGAffineTransformScale(CGAffineTransformIdentity, 1.3, 1.3);
-        self.mainView.alpha = 0;
-    } completion:nil];
-}
-
-- (IBAction)closeMainDevView:(id)sender{
-    [UIView animateWithDuration:0.5 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:UIViewAnimationOptionCurveEaseInOut animations:^{
-        self.mainView.transform = CGAffineTransformScale(CGAffineTransformIdentity, 1, 1);
-        self.mainView.alpha = 1;
-        self.mainDevView.transform = CGAffineTransformScale(CGAffineTransformIdentity, 0.7, 0.7);
-        self.mainDevView.alpha = 0;
     } completion:nil];
 }
 

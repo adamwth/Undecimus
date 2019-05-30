@@ -18,10 +18,10 @@
 @property (weak, nonatomic) IBOutlet UITextField *bootNonceTextField;
 @property (weak, nonatomic) IBOutlet UITextField *kernelExploitTextField;
 @property (nonatomic) UIPickerView *kernelExploitPickerView;
-@property (nonatomic) NSArray *exploitPickerArray;
+@property (nonatomic) NSMutableArray *exploitPickerArray;
 @property (nonatomic) NSMutableDictionary *availableExploits;
 @property (nonatomic) UIToolbar *exploitPickerToolbar;
-@property (nonatomic) NSNumber *isExploitPicking;
+@property (nonatomic) BOOL isExploitPicking;
 @property (weak, nonatomic) IBOutlet UIButton *restartButton;
 @property (weak, nonatomic) IBOutlet UISwitch *disableAutoUpdatesSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *disableAppRevokesSwitch;

@@ -52,47 +52,32 @@
     self.tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(userTappedAnyware:)];
     self.tap.cancelsTouchesInView = NO;
     [self.view addGestureRecognizer:self.tap];
-    _exploitPickerArray = [NSArray arrayWithObjects:@"empty_list", @"multi_path", @"async_wake", @"voucher_swap", @"mach_swap", @"mach_swap_2", nil];
-    _kernelExploitPickerView = [[UIPickerView alloc] init];
-    [[self kernelExploitPickerView] setDataSource:self];
-    [[self kernelExploitPickerView] setDelegate:self];
-    [[self kernelExploitTextField] setInputView:_kernelExploitPickerView];
-    _exploitPickerToolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 320, 56)];
-    [_exploitPickerToolbar setBarStyle:UIBarStyleDefault];
-    [_exploitPickerToolbar sizeToFit];
+    self.exploitPickerArray = [NSMutableArray new];
+    self.availableExploits = [NSMutableDictionary new];
+#define add_exploit(x) do { \
+    [_exploitPickerArray addObject:@(#x)]; \
+    if (supportsExploit(x ## _exploit)) [_availableExploits addEntriesFromDictionary:@{@(#x) : @(x ## _exploit)}]; \
+} while(false)
+    add_exploit(empty_list);
+    add_exploit(multi_path);
+    add_exploit(async_wake);
+    add_exploit(voucher_swap);
+    add_exploit(mach_swap);
+    add_exploit(mach_swap_2);
+#undef add_exploit
+    self.kernelExploitPickerView = [[UIPickerView alloc] init];
+    [self.kernelExploitPickerView setDataSource:self];
+    [self.kernelExploitPickerView setDelegate:self];
+    [self.kernelExploitTextField setInputView:_kernelExploitPickerView];
+    self.exploitPickerToolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 320, 56)];
+    [self.exploitPickerToolbar setBarStyle:UIBarStyleDefault];
+    [self.exploitPickerToolbar sizeToFit];
     UIBarButtonItem *alignRight = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:self action:nil];
     UIBarButtonItem *doneButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(pickerDoneAction)];
-    [_exploitPickerToolbar setItems:[NSArray arrayWithObjects:alignRight, doneButtonItem, nil] animated:FALSE];
-    [[self kernelExploitTextField] setInputAccessoryView:_exploitPickerToolbar];
-    _isExploitPicking = @(0);
-    _availableExploits = [NSMutableDictionary dictionaryWithDictionary:@{
-                                                                         @"empty_list" : [NSNumber numberWithInt:empty_list_exploit],
-                                                                         @"multi_path" : [NSNumber numberWithInt:multi_path_exploit],
-                                                                         @"async_wake" : [NSNumber numberWithInt:async_wake_exploit],
-                                                                         @"voucher_swap" : [NSNumber numberWithInt:voucher_swap_exploit],
-                                                                         @"mach_swap" : [NSNumber numberWithInt:mach_swap_exploit],
-                                                                         @"mach_swap_2" : [NSNumber numberWithInt:mach_swap_2_exploit]
-                                                                         }];
-    if (!supportsExploit(empty_list_exploit)) {
-        [_availableExploits removeObjectForKey:@"empty_list"];
-    }
-    if (!supportsExploit(multi_path_exploit)) {
-        [_availableExploits removeObjectForKey:@"multi_path"];
-    }
-    if (!supportsExploit(async_wake_exploit)) {
-        [_availableExploits removeObjectForKey:@"async_wake"];
-    }
-    if (!supportsExploit(voucher_swap_exploit)) {
-        [_availableExploits removeObjectForKey:@"voucher_swap"];
-    }
-    if (!supportsExploit(mach_swap_exploit)) {
-        [_availableExploits removeObjectForKey:@"mach_swap"];
-    }
-    if (!supportsExploit(mach_swap_2_exploit)) {
-        [_availableExploits removeObjectForKey:@"mach_swap_2"];
-    }
+    [self.exploitPickerToolbar setItems:[NSArray arrayWithObjects:alignRight, doneButtonItem, nil] animated:NO];
+    [self.kernelExploitTextField setInputAccessoryView:_exploitPickerToolbar];
+    self.isExploitPicking = NO;
 }
-
 
 -(void)darkModeSettings:(NSNotification *) notification  {
     [self.specialThanksLabel setTextColor:[UIColor whiteColor]];
@@ -116,6 +101,8 @@
     [self.setCSDebuggedLabel setTextColor:[UIColor whiteColor]];
     [self.autoRespringLabel setTextColor:[UIColor whiteColor]];
     [self.kernelExploitLabel setTextColor:[UIColor whiteColor]];
+    [self.exploitPickerToolbar setBarTintColor:[UIColor blackColor]];
+    [self.kernelExploitPickerView setBackgroundColor:[UIColor darkGrayColor]];
     
     [self.bootNonceButton setTitleColor:[UIColor whiteColor] forState:normal];
     [self.bootNonceTextField setTintColor:[UIColor whiteColor]];
@@ -153,6 +140,8 @@
     [self.setCSDebuggedLabel setTextColor:[UIColor blackColor]];
     [self.autoRespringLabel setTextColor:[UIColor blackColor]];
     [self.kernelExploitLabel setTextColor:[UIColor blackColor]];
+    [self.exploitPickerToolbar setBarTintColor:[UIColor lightTextColor]];
+    [self.kernelExploitPickerView setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0]];
     
     [self.bootNonceButton setTitleColor:[UIColor blackColor] forState:normal];
     [self.bootNonceTextField setTintColor:[UIColor blackColor]];
@@ -170,10 +159,9 @@
 
 - (void)userTappedAnyware:(UITapGestureRecognizer *) sender
 {
-    if ([_isExploitPicking isEqual:@(0)]) {
-        [self reloadData];
-        [self.view endEditing:YES];
-    }
+    if (self.isExploitPicking) return;
+    [self reloadData];
+    [self.view endEditing:YES];
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
@@ -269,24 +257,34 @@
     [self reloadData];
 }
 
-- (long)numberOfComponentsInPickerView:(UIPickerView *)pickerView {
+- (NSInteger)numberOfComponentsInPickerView:(UIPickerView *)pickerView {
     return 1;
 }
 
 - (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
-    return [_availableExploits count];
+    return [self.availableExploits count];
 }
 
 - (NSString *)pickerView:(UIPickerView *)pickerView titleForRow:(NSInteger)row forComponent:(NSInteger)component {
-    return [[_availableExploits allKeys] objectAtIndex:row];
+    NSString *title = [[self.availableExploits allKeys] objectAtIndex:row];
+    return title;
+}
+
+- (NSAttributedString *)pickerView:(UIPickerView *)pickerView attributedTitleForRow:(NSInteger)row forComponent:(NSInteger)component {
+    NSString *title = [[self.availableExploits allKeys] objectAtIndex:row];
+    prefs_t *prefs = copy_prefs();
+    NSDictionary *attributes = @{NSForegroundColorAttributeName : prefs->dark_mode ? [UIColor whiteColor] : [UIColor blackColor] };
+    release_prefs(&prefs);
+    NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:title attributes:attributes];
+    return attributedString;
 }
 
 - (void)pickerView:(UIPickerView *)pickerView didSelectRow:(NSInteger)row inComponent:(NSInteger)component {
-    _isExploitPicking = @(1);
+    self.isExploitPicking = YES;
 }
 
 - (void)pickerDoneAction{
-    _isExploitPicking = @(0);
+    self.isExploitPicking = NO;
     prefs_t *prefs = copy_prefs();
     prefs->exploit = [[_availableExploits objectForKey:[[_availableExploits allKeys] objectAtIndex:[[self kernelExploitPickerView] selectedRowInComponent:0]]] intValue];
     set_prefs(prefs);
