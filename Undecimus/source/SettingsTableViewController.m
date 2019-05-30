@@ -52,6 +52,45 @@
     self.tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(userTappedAnyware:)];
     self.tap.cancelsTouchesInView = NO;
     [self.view addGestureRecognizer:self.tap];
+    _exploitPickerArray = [NSArray arrayWithObjects:@"empty_list", @"multi_path", @"async_wake", @"voucher_swap", @"mach_swap", @"mach_swap_2", nil];
+    _kernelExploitPickerView = [[UIPickerView alloc] init];
+    [[self kernelExploitPickerView] setDataSource:self];
+    [[self kernelExploitPickerView] setDelegate:self];
+    [[self kernelExploitTextField] setInputView:_kernelExploitPickerView];
+    _exploitPickerToolbar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, 320, 56)];
+    [_exploitPickerToolbar setBarStyle:UIBarStyleDefault];
+    [_exploitPickerToolbar sizeToFit];
+    UIBarButtonItem *alignRight = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemFlexibleSpace target:self action:nil];
+    UIBarButtonItem *doneButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(pickerDoneAction)];
+    [_exploitPickerToolbar setItems:[NSArray arrayWithObjects:alignRight, doneButtonItem, nil] animated:FALSE];
+    [[self kernelExploitTextField] setInputAccessoryView:_exploitPickerToolbar];
+    _isExploitPicking = @(0);
+    _availableExploits = [NSMutableDictionary dictionaryWithDictionary:@{
+                                                                         @"empty_list" : [NSNumber numberWithInt:empty_list_exploit],
+                                                                         @"multi_path" : [NSNumber numberWithInt:multi_path_exploit],
+                                                                         @"async_wake" : [NSNumber numberWithInt:async_wake_exploit],
+                                                                         @"voucher_swap" : [NSNumber numberWithInt:voucher_swap_exploit],
+                                                                         @"mach_swap" : [NSNumber numberWithInt:mach_swap_exploit],
+                                                                         @"mach_swap_2" : [NSNumber numberWithInt:mach_swap_2_exploit]
+                                                                         }];
+    if (!supportsExploit(empty_list_exploit)) {
+        [_availableExploits removeObjectForKey:@"empty_list"];
+    }
+    if (!supportsExploit(multi_path_exploit)) {
+        [_availableExploits removeObjectForKey:@"multi_path"];
+    }
+    if (!supportsExploit(async_wake_exploit)) {
+        [_availableExploits removeObjectForKey:@"async_wake"];
+    }
+    if (!supportsExploit(voucher_swap_exploit)) {
+        [_availableExploits removeObjectForKey:@"voucher_swap"];
+    }
+    if (!supportsExploit(mach_swap_exploit)) {
+        [_availableExploits removeObjectForKey:@"mach_swap"];
+    }
+    if (!supportsExploit(mach_swap_2_exploit)) {
+        [_availableExploits removeObjectForKey:@"mach_swap_2"];
+    }
 }
 
 
@@ -81,6 +120,7 @@
     [self.bootNonceButton setTitleColor:[UIColor whiteColor] forState:normal];
     [self.bootNonceTextField setTintColor:[UIColor whiteColor]];
     
+    [self.kernelExploitTextField setValue:[UIColor darkGrayColor] forKeyPath:@"_placeholderLabel.textColor"];
     [self.bootNonceTextField setValue:[UIColor darkGrayColor] forKeyPath:@"_placeholderLabel.textColor"];
     [self.ecidLabel setValue:[UIColor darkGrayColor] forKeyPath:@"_placeholderLabel.textColor"];
     [self.ecidDarkModeButton setTitleColor:[UIColor whiteColor] forState:normal];
@@ -117,6 +157,7 @@
     [self.bootNonceButton setTitleColor:[UIColor blackColor] forState:normal];
     [self.bootNonceTextField setTintColor:[UIColor blackColor]];
     
+    [self.kernelExploitTextField setValue:[UIColor lightGrayColor] forKeyPath:@"_placeholderLabel.textColor"];
     [self.bootNonceTextField setValue:[UIColor lightGrayColor] forKeyPath:@"_placeholderLabel.textColor"];
     [self.ecidLabel setValue:[UIColor lightGrayColor] forKeyPath:@"_placeholderLabel.textColor"];
     [self.ecidDarkModeButton setTitleColor:[UIColor blackColor] forState:normal];
@@ -129,7 +170,10 @@
 
 - (void)userTappedAnyware:(UITapGestureRecognizer *) sender
 {
-    [self.view endEditing:YES];
+    if ([_isExploitPicking isEqual:@(0)]) {
+        [self reloadData];
+        [self.view endEditing:YES];
+    }
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
@@ -145,15 +189,9 @@
     [self.bootNonceTextField setPlaceholder:@(prefs->boot_nonce)];
     [self.bootNonceTextField setText:nil];
     [self.refreshIconCacheSwitch setOn:(BOOL)prefs->run_uicache];
-    [self.kernelExploitSegmentedControl setSelectedSegmentIndex:(int)prefs->exploit];
     [self.disableAutoUpdatesSwitch setOn:(BOOL)prefs->disable_auto_updates];
     [self.disableAppRevokesSwitch setOn:(BOOL)prefs->disable_app_revokes];
-    [self.kernelExploitSegmentedControl setEnabled:supportsExploit(empty_list_exploit) forSegmentAtIndex:empty_list_exploit];
-    [self.kernelExploitSegmentedControl setEnabled:supportsExploit(multi_path_exploit) forSegmentAtIndex:multi_path_exploit];
-    [self.kernelExploitSegmentedControl setEnabled:supportsExploit(async_wake_exploit) forSegmentAtIndex:async_wake_exploit];
-    [self.kernelExploitSegmentedControl setEnabled:supportsExploit(voucher_swap_exploit) forSegmentAtIndex:voucher_swap_exploit];
-    [self.kernelExploitSegmentedControl setEnabled:supportsExploit(mach_swap_exploit) forSegmentAtIndex:mach_swap_exploit];
-    [self.kernelExploitSegmentedControl setEnabled:supportsExploit(mach_swap_2_exploit) forSegmentAtIndex:mach_swap_2_exploit];
+    [self.kernelExploitTextField setPlaceholder:[_exploitPickerArray objectAtIndex:(int)prefs->exploit]];
     [self.openCydiaButton setEnabled:(BOOL)cydiaIsInstalled()];
     [self.expiryLabel setPlaceholder:[NSString stringWithFormat:@"%d %@", (int)[[SettingsTableViewController provisioningProfileAtPath:[[NSBundle mainBundle] pathForResource:@"embedded" ofType:@"mobileprovision"]][@"ExpirationDate"] timeIntervalSinceDate:[NSDate date]] / 86400, localize(@"Days")]];
     [self.overwriteBootNonceSwitch setOn:(BOOL)prefs->overwrite_boot_nonce];
@@ -231,11 +269,29 @@
     [self reloadData];
 }
 
-- (IBAction)kernelExploitSegmentedControlValueChanged:(id)sender {
+- (long)numberOfComponentsInPickerView:(UIPickerView *)pickerView {
+    return 1;
+}
+
+- (NSInteger)pickerView:(UIPickerView *)pickerView numberOfRowsInComponent:(NSInteger)component {
+    return [_availableExploits count];
+}
+
+- (NSString *)pickerView:(UIPickerView *)pickerView titleForRow:(NSInteger)row forComponent:(NSInteger)component {
+    return [[_availableExploits allKeys] objectAtIndex:row];
+}
+
+- (void)pickerView:(UIPickerView *)pickerView didSelectRow:(NSInteger)row inComponent:(NSInteger)component {
+    _isExploitPicking = @(1);
+}
+
+- (void)pickerDoneAction{
+    _isExploitPicking = @(0);
     prefs_t *prefs = copy_prefs();
-    prefs->exploit = (int)self.kernelExploitSegmentedControl.selectedSegmentIndex;
+    prefs->exploit = [[_availableExploits objectForKey:[[_availableExploits allKeys] objectAtIndex:[[self kernelExploitPickerView] selectedRowInComponent:0]]] intValue];
     set_prefs(prefs);
     release_prefs(&prefs);
+    [[self kernelExploitTextField] resignFirstResponder];
     [self reloadData];
 }
 
