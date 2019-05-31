@@ -100,6 +100,11 @@
     [self.enableGetTaskAllowLabel setTextColor:[UIColor whiteColor]];
     [self.setCSDebuggedLabel setTextColor:[UIColor whiteColor]];
     [self.autoRespringLabel setTextColor:[UIColor whiteColor]];
+    [self.openGithubLabel setTextColor:[UIColor whiteColor]];
+    [self.cleanDiagsLabel setTextColor:[UIColor whiteColor]];
+    [self.checkForUpdateLabel setTextColor:[UIColor whiteColor]];
+    [self.autoSelectExploitLabel setTextColor:[UIColor whiteColor]];
+    [self.resetAppPrefsLabel setTextColor:[UIColor whiteColor]];
     [self.kernelExploitLabel setTextColor:[UIColor whiteColor]];
     [self.exploitPickerToolbar setBarTintColor:[UIColor blackColor]];
     [self.kernelExploitPickerView setBackgroundColor:[UIColor darkGrayColor]];
@@ -139,6 +144,11 @@
     [self.enableGetTaskAllowLabel setTextColor:[UIColor blackColor]];
     [self.setCSDebuggedLabel setTextColor:[UIColor blackColor]];
     [self.autoRespringLabel setTextColor:[UIColor blackColor]];
+    [self.cleanDiagsLabel setTextColor:[UIColor blackColor]];
+    [self.checkForUpdateLabel setTextColor:[UIColor blackColor]];
+    [self.autoSelectExploitLabel setTextColor:[UIColor blackColor]];
+    [self.resetAppPrefsLabel setTextColor:[UIColor blackColor]];
+    [self.openGithubLabel setTextColor:[UIColor blackColor]];
     [self.kernelExploitLabel setTextColor:[UIColor blackColor]];
     [self.exploitPickerToolbar setBarTintColor:[UIColor lightTextColor]];
     [self.kernelExploitPickerView setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0]];
@@ -180,7 +190,6 @@
     [self.disableAutoUpdatesSwitch setOn:(BOOL)prefs->disable_auto_updates];
     [self.disableAppRevokesSwitch setOn:(BOOL)prefs->disable_app_revokes];
     [self.kernelExploitTextField setPlaceholder:[_exploitPickerArray objectAtIndex:(int)prefs->exploit]];
-    [self.openCydiaButton setEnabled:(BOOL)cydiaIsInstalled()];
     [self.expiryLabel setPlaceholder:[NSString stringWithFormat:@"%d %@", (int)[[SettingsTableViewController provisioningProfileAtPath:[[NSBundle mainBundle] pathForResource:@"embedded" ofType:@"mobileprovision"]][@"ExpirationDate"] timeIntervalSinceDate:[NSDate date]] / 86400, localize(@"Days")]];
     [self.overwriteBootNonceSwitch setOn:(BOOL)prefs->overwrite_boot_nonce];
     [self.exportKernelTaskPortSwitch setOn:(BOOL)prefs->export_kernel_task_port];
@@ -197,15 +206,12 @@
     [self.enableGetTaskAllowSwitch setOn:(BOOL)prefs->enable_get_task_allow];
     [self.setCSDebuggedSwitch setOn:(BOOL)prefs->set_cs_debugged];
     [self.autoRespringSwitch setOn:(BOOL)prefs->auto_respring];
-    [self.restartSpringBoardButton setEnabled:respringSupported()];
-    [self.restartButton setEnabled:restartSupported()];
     release_prefs(&prefs);
     [JailbreakViewController.sharedController updateStatus];
     [self.tableView reloadData];
 }
 
-- (IBAction)selectedSpecialThanks:(id)sender {
-    
+- (void)selectedSpecialThanks{
     [[NSNotificationCenter defaultCenter] postNotificationName:@"showSpecialThanks" object:self];
 }
 
@@ -301,7 +307,7 @@
     [self reloadData];
 }
 
-- (IBAction)tappedOnRestart:(id)sender {
+- (void)tappedOnRestart {
     void (^const block)(void) = ^(void) {
         notice(localize(@"The device will be restarted."), true, false);
         NSInteger const support = recommendedRestartSupport();
@@ -326,6 +332,55 @@
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0ul), block);
 }
 
+-(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
+    NSLog(@"Section: %ld Row: %ld", (long)[indexPath section], (long)[indexPath row]);
+    switch ([indexPath section]) {
+        case 0:
+            switch ([indexPath row]) {
+                case 0:
+                    [self selectedSpecialThanks];
+                    break;
+                default:
+                    break;
+            }
+            break;
+        case 1:
+            switch ([indexPath row]) {
+                case 0:
+                    [self tappedOnRestart];
+                    break;
+                case 1:
+                    [self tappedOnShareDiagnosticsData];
+                    break;
+                case 2:
+                    [self tappedOnOpenCydia];
+                    break;
+                case 3:
+                    [self tappedOnOpenGithub];
+                    break;
+                case 4:
+                    [self tappedOnAutomaticallySelectExploit];
+                    break;
+                case 5:
+                    [self tappedRestartSpringBoard];
+                    break;
+                case 6:
+                    [self tappedOnCleanDiagnosticsData];
+                    break;
+                case 7:
+                    [self tappedOnCheckForUpdate];
+                    break;
+                case 8:
+                    [self tappedOnResetAppPreferences];
+                    break;
+                default:
+                    break;
+            }
+        default:
+            break;
+    }
+}
+
 - (IBAction)disableAutoUpdatesSwitchValueChanged:(id)sender {
     prefs_t *prefs = copy_prefs();
     prefs->disable_auto_updates = (bool)self.disableAutoUpdatesSwitch.isOn;
@@ -334,21 +389,21 @@
     [self reloadData];
 }
 
-- (IBAction)tappedOnShareDiagnosticsData:(id)sender {
+- (void)tappedOnShareDiagnosticsData{
     NSURL *const URL = [NSURL fileURLWithPath:[NSString stringWithFormat:@"%@/Documents/diagnostics.plist", NSHomeDirectory()]];
     [getDiagnostics() writeToURL:URL error:nil];
     UIActivityViewController *const activityViewController = [[UIActivityViewController alloc] initWithActivityItems:@[URL] applicationActivities:nil];
     if ([activityViewController respondsToSelector:@selector(popoverPresentationController)]) {
-        [[activityViewController popoverPresentationController] setSourceView:self.shareDiagnosticsDataButton];
+        [[activityViewController popoverPresentationController] setSourceView:self.shareDiagnosticsDataLabel];
     }
     [self presentViewController:activityViewController animated:YES completion:nil];
 }
 
-- (IBAction)tappedOnOpenCydia:(id)sender {
+- (void)tappedOnOpenCydia{
     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"cydia://"] options:@{} completionHandler:nil];
 }
 
-- (IBAction)tappedOnOpenGithub:(id)sender {
+- (void)tappedOnOpenGithub{
     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"https://github.com/pwn20wndstuff/Undecimus"] options:@{} completionHandler:nil];
 }
 
@@ -386,7 +441,7 @@
     [self presentViewController:copyBootNonceAlert animated:TRUE completion:nil];
 }
 
-- (IBAction)tappedOnCheckForUpdate:(id)sender {
+- (void)tappedOnCheckForUpdate{
     void (^const block)(void) = ^(void) {
         NSString *const update = [NSString stringWithContentsOfURL:[NSURL URLWithString:@"https://github.com/pwn20wndstuff/Undecimus/raw/master/Update.txt"] encoding:NSUTF8StringEncoding error:nil];
         if (update == nil) {
@@ -445,7 +500,7 @@
     [self reloadData];
 }
 
-- (IBAction)tappedOnAutomaticallySelectExploit:(id)sender {
+- (void)tappedOnAutomaticallySelectExploit{
     prefs_t *prefs = copy_prefs();
     prefs->exploit = (int)recommendedJailbreakSupport();
     set_prefs(prefs);
@@ -461,7 +516,7 @@
     [self reloadData];
 }
 
-- (IBAction)tappedRestartSpringBoard:(id)sender {
+- (void)tappedRestartSpringBoard{
     void (^const block)(void) = ^(void) {
         notice(localize(@"SpringBoard will be restarted."), true, false);
         NSInteger const support = recommendedRespringSupport();
@@ -480,7 +535,7 @@
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0ul), block);
 }
 
-- (IBAction)tappedOnCleanDiagnosticsData:(id)sender {
+- (void)tappedOnCleanDiagnosticsData{
     cleanLogs();
     notice(localize(@"Cleaned diagnostics data."), false, false);
 }
@@ -538,7 +593,7 @@
     [self reloadData];
 }
 
-- (IBAction)tappedOnResetAppPreferences:(id)sender {
+- (void)tappedOnResetAppPreferences{
     void (^const block)(void) = ^(void) {
         reset_prefs();
         notice(localize(@"Preferences were reset. The app will now exit."), true, false);

@@ -22,12 +22,12 @@
 @property (nonatomic) NSMutableDictionary *availableExploits;
 @property (nonatomic) UIToolbar *exploitPickerToolbar;
 @property (nonatomic) BOOL isExploitPicking;
-@property (weak, nonatomic) IBOutlet UIButton *restartButton;
+@property (weak, nonatomic) IBOutlet UILabel *restartLabel;
 @property (weak, nonatomic) IBOutlet UISwitch *disableAutoUpdatesSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *disableAppRevokesSwitch;
 @property (nonatomic) UITapGestureRecognizer *tap;
-@property (weak, nonatomic) IBOutlet UIButton *shareDiagnosticsDataButton;
-@property (weak, nonatomic) IBOutlet UIButton *openCydiaButton;
+@property (weak, nonatomic) IBOutlet UILabel *shareDiagnosticsDataLabel;
+@property (weak, nonatomic) IBOutlet UILabel *openCydiaLabel;
 @property (weak, nonatomic) IBOutlet UITextField *expiryLabel;
 @property (weak, nonatomic) IBOutlet UISwitch *overwriteBootNonceSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *exportKernelTaskPortSwitch;
@@ -38,14 +38,18 @@
 @property (weak, nonatomic) IBOutlet UISwitch *increaseMemoryLimitSwitch;
 @property (weak, nonatomic) IBOutlet UITextField *ecidLabel;
 @property (weak, nonatomic) IBOutlet UISwitch *reloadSystemDaemonsSwitch;
-@property (weak, nonatomic) IBOutlet UIButton *restartSpringBoardButton;
+@property (weak, nonatomic) IBOutlet UILabel *restartSpringBoardLabel;
 @property (weak, nonatomic) IBOutlet UISwitch *hideLogWindowSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *resetCydiaCacheSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *sshOnlySwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *enableGetTaskAllowSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *setCSDebuggedSwitch;
 @property (weak, nonatomic) IBOutlet UISwitch *autoRespringSwitch;
-
+@property (weak, nonatomic) IBOutlet UILabel *openGithubLabel;
+@property (weak, nonatomic) IBOutlet UILabel *autoSelectExploitLabel;
+@property (weak, nonatomic) IBOutlet UILabel *cleanDiagsLabel;
+@property (weak, nonatomic) IBOutlet UILabel *resetAppPrefsLabel;
+@property (weak, nonatomic) IBOutlet UILabel *checkForUpdateLabel;
 @property (weak, nonatomic) IBOutlet UILabel *specialThanksLabel;
 @property (weak, nonatomic) IBOutlet UILabel *tweakInjectionLabel;
 @property (weak, nonatomic) IBOutlet UILabel *loadDaemonsLabel;
